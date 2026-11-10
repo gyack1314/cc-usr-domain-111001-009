@@ -1,0 +1,10 @@
+{
+  "GET /push-sequence": "返回待发送到接收端的乱序推送序列，调用方负责POST",
+  "GET /events": "epoch与after，返回大于after的事件，连续进度由采集端维护",
+  "GET /snapshot": "epoch与page，固定barrier=10，分页快照",
+  "phases": [
+    "base",
+    "rotated",
+    "snapshot-fail"
+  ]
+}

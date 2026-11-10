@@ -1,0 +1,42 @@
+[
+  {
+    "epoch": "e1",
+    "offset": 1,
+    "event_id": "x1",
+    "record_id": "a",
+    "revision": 1,
+    "operation": "upsert",
+    "body": {
+      "place": "南门"
+    }
+  },
+  {
+    "epoch": "e1",
+    "offset": 2,
+    "event_id": "x2",
+    "record_id": "a",
+    "revision": 3,
+    "operation": "delete",
+    "body": null
+  },
+  {
+    "epoch": "e1",
+    "offset": 3,
+    "event_id": "x3",
+    "record_id": "a",
+    "revision": 2,
+    "operation": "upsert",
+    "body": {
+      "place": "旧东门"
+    }
+  },
+  {
+    "epoch": "e2",
+    "offset": 11,
+    "event_id": "y11",
+    "record_id": "b",
+    "revision": 2,
+    "operation": "delete",
+    "body": null
+  }
+]
