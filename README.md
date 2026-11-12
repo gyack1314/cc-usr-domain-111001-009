@@ -40,3 +40,31 @@ docker run --rm --network none event-bridge-source
 ```
 
 来源的HTTP异常是合成协议行为，便于资料接入端开发和诊断。样本可扩展；业务数据、原始HTML以及接口响应不应被当作真实部署凭据或真实业务事实。
+
+## 变更采集桥接
+
+`event_bridge/` 是资料接入端的桥接模块，把来源推送与主动补采落到同一个 SQLite 本地变更日志，供下游按游标读取。仅依赖标准库。
+
+- 推送先持久化到收件箱再确认；同一 epoch 内 `event_id` 幂等，`offset` 唯一。
+- 只有从连续确认 offset 开始的事件才按序应用；补采从连续进度开始，不使用已见最大 offset。
+- 同一 `record_id` 只接受更高 `revision`；同 revision 不同内容进入冲突证据；`delete` 是带 revision 的墓碑，旧 revision 的 upsert 不会复活资料。
+- 补采返回 410 时先完整保存绑定新 epoch 与 barrier 的分页快照，再原子切换视图并接 barrier 之后的事件；快照翻页失败不会替换当前可读视图。
+- 下游日志使用独立的本地自增游标；`kind='change'` 是已应用的业务变更，`conflict`、`ignored`、`snapshot_switch`、`snapshot_failure`、`late_epoch` 是证据（`applied=False`）。
+
+```python
+from event_bridge import EventBridge, HttpSourceClient
+
+source = HttpSourceClient("http://127.0.0.1:8090")
+bridge = EventBridge(source, "state/bridge.sqlite3")
+bridge.receive_push(events)      # 接收推送，返回连续确认进度
+bridge.backfill()                # 主动补采；410 时自动做快照恢复
+bridge.read_records()            # 当前资料（include_deleted=True 含墓碑）
+page = bridge.read_log(0, 50)    # 下游日志分页；page["next_cursor"] 续读
+bridge.close()
+```
+
+完整演示（缺口补采、410、快照失败重试、重启幂等）：
+
+```sh
+python -m event_bridge.demo
+```
